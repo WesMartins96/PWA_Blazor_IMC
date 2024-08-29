@@ -1,0 +1,71 @@
+﻿@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+
+<EditForm Model="@_model" OnValidSubmit="@ShowModalAsync">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+
+    <div class="mb">
+        <InputNumber @bind-Value="_model.Height" class="form-input" type="number" step="0.01" placeholder="Altura"></InputNumber>
+        <span class="form-input-invalid">
+            <ValidationMessage For="@(() => _model.Height)"></ValidationMessage>
+        </span>
+    </div>
+
+    <div class="mb">
+        <InputNumber @bind-Value="_model.Weight" class="form-input" type="number" step="0.1" placeholder="Peso"></InputNumber>
+        <span class="form-input-invalid">
+            <ValidationMessage For="@(() => _model.Weight)"></ValidationMessage>
+        </span>
+    </div>
+
+    <div class="flex flex-center">
+        <button type="submit" class="btn btn-filled btn-auto mb">Calcular o IMC</button>
+        <a class="btn btn-link" href="#about">Conheça o desenvolvedor</a>
+    </div>
+
+</EditForm>
+
+
+<Dialog @ref="_dialog" OnModalCloseCallback="@OnModalClose">
+    @if (_model.Imc < 18.6)
+    {
+        <h1>Abaixo do peso ⚠️</h1>
+        <p>Você está abaixo do peso indicado</p>
+    }
+    else if (_model.Imc >= 18.6 && _model.Imc <= 24.9)
+    {
+        <h1>Peso ideal ✅</h1>
+        <p>Parabêns! Você está na faixa de peso indicado</p>
+    }
+    else if (_model.Imc >= 24.9)
+    {
+        <h1>Sobrepeso 🔴</h1>
+        <p>Você está acima do peso indicado</p>
+    }
+</Dialog>
+
+
+@code {
+
+    private Dialog _dialog = null!;
+    public ImcModel _model { get; set; } = new();
+
+    public async Task OnValidSubmitAsync()
+    {
+        await ShowModalAsync();
+    }
+
+
+    private Task ShowModalAsync() => _dialog.ShowModalAsync();
+
+
+    private async Task OnModalClose()
+    {
+        //utilizando LocalStorage para salvar históricos de calculos Imc
+        AppState.History.Add(_model);
+        await localStorage.SetItemAsync("data", AppState.History);
+        AppState.NotifyChanges(_model, null);
+
+        _model = new(); 
+    }
+}
